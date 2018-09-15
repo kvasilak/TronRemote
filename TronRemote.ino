@@ -21,60 +21,53 @@ static uint8_t state = 0xff;
 
 void setup(void)
 {
-  Serial.begin(115200);
-  printf_begin();
-  printf("ROLE: Remote\n\r");
-
-  radio.begin();
-
-  //radio.setPALevel(RF24_PA_MIN); 
-
+    Serial.begin(115200);
+    printf_begin();
+    printf("ROLE: Remote\n\r");
+    
+    radio.begin();
+    
+    //radio.setPALevel(RF24_PA_MIN); 
+    
     radio.openWritingPipe(pipe);
-
-  radio.printDetails();
+    
+    radio.printDetails();
 
     int i = num_button_pins;
     while(i--)
     {
-      pinMode(button_pins[i],INPUT);
-      digitalWrite(button_pins[i],HIGH);
+        pinMode(button_pins[i],INPUT);
+        digitalWrite(button_pins[i],HIGH);
     }
 }
 
 void loop(void)
 {
-  int i;
-  //printf("Switch states: ");
+    int i;
 
-  //Find first off switch
-  //switches are expected to be turned on ( and left on) in sequence
-  for(i-0; i<num_button_pins; i++)
-  {
-
-    //printf("%d, ",digitalRead(button_pins[i]));
-    
-    if(digitalRead(button_pins[i]) == 1)
+    //Find first off switch
+    //switches are expected to be turned on ( and left on) in sequence
+    for(i-0; i<num_button_pins; i++)
     {
-      if(state != i)
-     {
-        state = i;
-     
-         printf("New state %d\n", state);
-        //the current value of i is the state
-        //if no swtched are on state is zero, first switch on state is 1...
-        bool ok = radio.write( &state, 1 );
-        
-        if (ok)
-          printf("ok\n\r");
-        else
-          printf("failed\n\r");
-        
-        
-      }
-      break; //found it
+        if(digitalRead(button_pins[i]) == 1)
+        {
+            if(state != i)
+            {
+                state = i;
+                
+                printf("New state %d\n", state);
+                //the current value of i is the state
+                //if no swtched are on state is zero, first switch on state is 1...
+                bool ok = radio.write( &state, 1 );
+                
+                if (ok)
+                printf("ok\n\r");
+                else
+                printf("failed\n\r");  
+            }
+            break; //found it
+        }
     }
-  }
-    //printf("\n");
     delay(1000);
 }
 
