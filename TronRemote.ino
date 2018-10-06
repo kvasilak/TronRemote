@@ -18,6 +18,35 @@ const uint64_t pipe[2] = {0xE8E8F0F0E1LL, 0xE8E8F0F0E2LL };
 uint8_t button_states[sizeof(button_pins)];
 static uint8_t state = 1;
 
+//add 1 more retry to each send
+//well since the radio retries 15 time already were retrying 15 more times
+void sendCmd(uint8_t *cmd)
+{
+  radio.openWritingPipe(pipe[0]);
+    bool sendok = radio.write( cmd, 1);
+    
+    
+   radio.openWritingPipe(pipe[1]);
+   if (radio.write( cmd, 1 ))
+     printf("1 ok\n\r");
+   else
+   {
+     printf("1 failed\n\r");  
+     radio.write( cmd, 1 );
+   }
+
+    //Did the first send succeed?
+     if (sendok)
+       printf("0 ok\n\r");
+     else
+     {
+       printf("0 failed, retry\n\r");
+
+       radio.openWritingPipe(pipe[0]);
+       radio.write( cmd, 1);
+     }
+}
+
 void setup(void)
 {
     Serial.begin(115200);
@@ -28,27 +57,19 @@ void setup(void)
     
     radio.setPALevel(RF24_PA_MAX); 
 
+    radio.setChannel(120);
+
     radio.printDetails();
 
     int i;
-    for(i=0;i<=sizeof(button_pins);i++)
+    for(i=0;i<sizeof(button_pins);i++)
     {
         pinMode(button_pins[i],INPUT);
         digitalWrite(button_pins[i],HIGH);
     }
 
     //state == 1 on power on
-    radio.openWritingPipe(pipe[0]);
-    if (radio.write( &state, 1 ))
-       printf("ok\n\r");
-     else
-       printf("failed\n\r");
-    
-   radio.openWritingPipe(pipe[1]);
-   if (radio.write( &state, 1 ))
-     printf("ok\n\r");
-   else
-     printf("failed\n\r");  
+    sendCmd(&state);
 }
 
 void loop(void)
@@ -68,17 +89,19 @@ void loop(void)
                 printf("New state %d\n", state);
                 //the current value of i is the state
                 //if no swtched are on state is zero, first switch on state is 1...
-               radio.openWritingPipe(pipe[0]);
-               if (radio.write( &state, 1 ))
-                   printf("ok\n\r");
-                 else
-                   printf("failed\n\r");
+                sendCmd(&state);
                 
-               radio.openWritingPipe(pipe[1]);
-               if (radio.write( &state, 1 ))
-                 printf("ok\n\r");
-               else
-                 printf("failed\n\r");  
+//               radio.openWritingPipe(pipe[0]);
+//               if (radio.write( &state, 1 ))
+//                   printf("ok\n\r");
+//                 else
+//                   printf("failed\n\r");
+//                
+//               radio.openWritingPipe(pipe[1]);
+//               if (radio.write( &state, 1 ))
+//                 printf("ok\n\r");
+//               else
+//                 printf("failed\n\r");  
             }
             break; //found it
         }
